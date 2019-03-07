@@ -1,2 +1,3 @@
 TODO:
 	Support for multiple file arguments
+	Return 1 on read and write failures

@@ -24,7 +24,7 @@ O_RDONLY	equ 0
 [global _start]
 
 _start:
-	mov rax, [rsp + 16]	; argv[1]
+	mov rax, [rsp + 16]	; argv[1] (TODO multiple args)
 
 	test rax, rax		; argv[1] == NULL
 	je stdin
@@ -92,4 +92,4 @@ stdin:
 	jmp read
 
 [section .bss]
-	buffer: resb BUFSIZE		; 1024-byte buffer
+	buffer: resb BUFSIZE	; 1024-byte buffer
