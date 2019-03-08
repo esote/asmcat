@@ -24,19 +24,21 @@ O_RDONLY	equ 0
 [global _start]
 
 _start:
+	xor r14, r14		; error, r14 is callee-saved
+
 	mov r15, [rsp]		; argc, r15 is callee-saved
 	mov rbp, [rsp + 16]	; argv[1..]
 
-	cmp r15, 1		; argc <= 1
+	cmp r15, 1
 	dec r15
-	jle stdin
+	jle stdin		; read stdin if argc <= 1
+	dec r15
 
 	mov rax, rbp
 open:
-	cmp byte [rax], 45	; argv[1][0] == '-'
+	cmp byte [rax], 45
 	jne ropen
-
-	cmp byte [rax + 1], 0	; argv[1][1] == '\0'
+	cmp byte [rax + 1], 0	; argv[1] is "-"
 	je stdin
 
 ropen:
@@ -47,8 +49,9 @@ ropen:
 	syscall
 
 	test rax, rax		; open failed
-	mov rdi, 1
-	js exit
+	mov rcx, 1
+	cmovs r14, rcx
+	js next
 
 	mov rbx, rax		; rbx stores fd
 read:
@@ -59,9 +62,9 @@ read:
 	syscall
 
 	test rax, rax
-	mov rdi, 1
-	js close		; read failed
-	xor rdi, rdi
+	mov rcx, 1
+	cmovs r14, rcx
+	js next			; read failed
 	je close		; read complete
 
 	mov rdx, rax		; read amount
@@ -70,10 +73,10 @@ write:
 	mov rax, 1		; sys_write
 	syscall
 
-	cmp rax, rax
-	mov rdi, 1
+	test rax, rax
+	mov rcx, 1
+	cmovs r14, rcx
 	js close		; write failed
-	xor rdi, rdi
 
 	sub rdx, rax
 
@@ -91,7 +94,8 @@ close:
 	syscall
 
 	test rax, rax
-	mov rdi, 1
+	mov rcx, 1
+	cmovs r14, rcx
 	js exit			; close failed
 
 next:
@@ -109,8 +113,8 @@ next:
 	mov rax, rbp
 	jne open
 
-	xor rdi, rdi
 exit:
+	mov rdi, r14
 	mov rax, 60		; sys_exit
 	syscall
 
