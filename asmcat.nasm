@@ -24,7 +24,7 @@ O_RDONLY	equ 0
 [global _start]
 
 _start:
-	mov r15, [rsp]		; argc, r15 is calee-saved
+	mov r15, [rsp]		; argc, r15 is callee-saved
 	mov rbp, [rsp + 16]	; argv[1..]
 
 	cmp r15, 1		; argc <= 1
@@ -59,7 +59,9 @@ read:
 	syscall
 
 	test rax, rax
-	js close		; read failed (TODO ret 1)
+	mov rdi, 1
+	js close		; read failed
+	xor rdi, rdi
 	je close		; read complete
 
 	mov rdx, rax		; read amount
@@ -69,7 +71,9 @@ write:
 	syscall
 
 	cmp rax, rax
-	js close		; write failed (TODO ret 1)
+	mov rdi, 1
+	js close		; write failed
+	xor rdi, rdi
 
 	sub rdx, rax
 

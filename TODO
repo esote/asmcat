@@ -1,2 +1,2 @@
 TODO:
-	Return 1 on read and write failures
+	Fix incorrect return value in some cases
