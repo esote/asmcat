@@ -24,20 +24,25 @@ O_RDONLY	equ 0
 [global _start]
 
 _start:
-	mov rax, [rsp + 16]	; argv[1] (TODO multiple args)
+	mov r15, [rsp]		; argc, r15 is calee-saved
+	mov rbp, [rsp + 16]	; argv[1..]
 
-	test rax, rax		; argv[1] == NULL
-	je stdin
+	cmp r15, 1		; argc <= 1
+	dec r15
+	jle stdin
 
+	mov rax, rbp
+open:
 	cmp byte [rax], 45	; argv[1][0] == '-'
-	jne open
+	jne ropen
 
 	cmp byte [rax + 1], 0	; argv[1][1] == '\0'
 	je stdin
 
-open:
+ropen:
 	mov rdi, rax
 	mov rax, 2		; sys_open
+	xor rsi, rsi
 	mov rdx, O_RDONLY
 	syscall
 
@@ -74,6 +79,9 @@ write:
 	jmp read		; write complete
 
 close:
+	cmp rbx, STDIN		; don't close standard input
+	je next
+
 	mov rax, 3		; sys_close
 	mov rdi, rbx
 	syscall
@@ -81,6 +89,21 @@ close:
 	test rax, rax
 	mov rdi, 1
 	js exit			; close failed
+
+next:
+	cmp r15, 0
+	je exit
+
+	inc rbp
+	cmp byte [rbp], 0
+	jne next
+
+	dec r15
+
+	inc rbp
+	cmp byte [rbp], 0
+	mov rax, rbp
+	jne open
 
 	xor rdi, rdi
 exit:
