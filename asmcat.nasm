@@ -24,10 +24,10 @@ O_RDONLY	equ 0
 [global _start]
 
 _start:
-	xor r14, r14		; error, r14 is callee-saved
+	xor r14, r14		; error value, r14 is callee-saved
 
 	mov r15, [rsp]		; argc, r15 is callee-saved
-	mov rbp, [rsp + 16]	; argv[1..]
+	mov rbp, [rsp + 16]	; argv
 
 	cmp r15, 1
 	dec r15
@@ -38,7 +38,7 @@ _start:
 open:
 	cmp byte [rax], 45
 	jne ropen
-	cmp byte [rax + 1], 0	; argv[1] is "-"
+	cmp byte [rax + 1], 0	; *argv is "-"
 	je stdin
 
 ropen:
@@ -96,14 +96,13 @@ close:
 	test rax, rax
 	mov rcx, 1
 	cmovs r14, rcx
-	js exit			; close failed
 
 next:
 	cmp r15, 0
 	je exit
 
 	inc rbp
-	cmp byte [rbp], 0
+	cmp byte [rbp], 0	; next in argv
 	jne next
 
 	dec r15
@@ -114,6 +113,10 @@ next:
 	jne open
 
 exit:
+	mov rax, 3		; sys_close
+	mov rdi, STDOUT		; close stdout, allow SIGPIPE
+	syscall
+
 	mov rdi, r14
 	mov rax, 60		; sys_exit
 	syscall
